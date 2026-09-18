@@ -29,7 +29,7 @@ pm2 start src/index.js --name discord-server-tracker --interpreter node
 
 ## Commands
 
-- `/leaderboard board:<Top Emojis|Top Stickers|Top Users (Emojis)|Top Users (Stickers)> [range]` — server-wide leaderboards.
+- `/leaderboard board:<Emojis|Stickers|Users (Emojis)|Users (Stickers)> [range] [order:Most used|Least used]` — paginated server-wide leaderboards (Prev/Next buttons). Emoji and sticker boards list every emoji/sticker the server currently has, including unused ones at 0, so `Least used` is the way to find candidates to delete.
 - `/stats [user] [range]` — a user's (or your own) personal top emojis and stickers.
 - `/emoji-leaderboard emoji:<emoji> [direction:Sent|Received] [range]` — who uses (or gets reactions with) a specific emoji the most.
 

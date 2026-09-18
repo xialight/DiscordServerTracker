@@ -33,30 +33,27 @@ export function removeMessageUsage(messageId) {
   deleteMessageStmt.run(messageId);
 }
 
-const topItemsStmt = db.prepare(`
-  SELECT item_id AS itemId, item_name AS itemName, animated, COUNT(*) AS count
+const itemCountsStmt = db.prepare(`
+  SELECT item_id AS itemId, COUNT(*) AS count
   FROM usage
   WHERE kind = ? AND created_at >= ?
   GROUP BY item_id
-  ORDER BY count DESC
-  LIMIT ?
 `);
 
-export function getTopItems({ kind, since, limit = 10 }) {
-  return topItemsStmt.all(kind, since, limit);
+export function getItemCounts({ kind, since }) {
+  return itemCountsStmt.all(kind, since);
 }
 
-const topUsersStmt = db.prepare(`
+const userCountsStmt = db.prepare(`
   SELECT user_id AS userId, COUNT(*) AS count
   FROM usage
   WHERE kind = ? AND created_at >= ?
   GROUP BY user_id
   ORDER BY count DESC
-  LIMIT ?
 `);
 
-export function getTopUsers({ kind, since, limit = 10 }) {
-  return topUsersStmt.all(kind, since, limit);
+export function getUserCounts({ kind, since }) {
+  return userCountsStmt.all(kind, since);
 }
 
 const userBreakdownStmt = db.prepare(`
