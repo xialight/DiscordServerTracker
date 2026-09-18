@@ -1,0 +1,19 @@
+{
+  "name": "discord-server-tracker",
+  "description": "Discord bot that tracks a single server's custom emoji and sticker usage, with all-time/weekly/daily leaderboards.",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/helpers/deployCommands.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.9.1",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.25.1",
+    "prettier": "^3.5.3"
+  }
+}
