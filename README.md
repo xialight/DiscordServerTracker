@@ -47,3 +47,5 @@ Single `usage` table, one row per emoji/sticker event:
 | `user_id` | who gets credited |
 | `message_id` | used to clean up rows if a message or reaction is removed |
 | `created_at` | unix seconds, indexed for range queries |
+
+Each emoji/sticker counts at most once per message (and once per user per reaction), enforced by a unique index on `(kind, action, item_id, user_id, message_id)` — spamming the same emote 50 times in one message still counts as 1.

@@ -1,7 +1,7 @@
 import { db } from './db.js';
 
 const insertUsageStmt = db.prepare(`
-  INSERT INTO usage (kind, action, item_id, item_name, animated, user_id, message_id, created_at)
+  INSERT OR IGNORE INTO usage (kind, action, item_id, item_name, animated, user_id, message_id, created_at)
   VALUES (@kind, @action, @itemId, @itemName, @animated, @userId, @messageId, @createdAt)
 `);
 

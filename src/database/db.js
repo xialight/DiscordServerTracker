@@ -27,3 +27,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_usage_user ON usage(user_id, kind, created_at);
   CREATE INDEX IF NOT EXISTS idx_usage_message ON usage(message_id);
 `);
+
+const hasUniqueIndex = db
+  .prepare("SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'idx_usage_unique'")
+  .get();
+
+if (!hasUniqueIndex) {
+  db.transaction(() => {
+    db.exec(`
+      DELETE FROM usage
+      WHERE id NOT IN (
+        SELECT MIN(id) FROM usage GROUP BY kind, action, item_id, user_id, message_id
+      );
+      CREATE UNIQUE INDEX idx_usage_unique ON usage(kind, action, item_id, user_id, message_id);
+    `);
+  })();
+}
