@@ -26,6 +26,7 @@ export default {
         removeReactionUsage({
           itemId: reaction.emoji.id,
           userId: message.author.id,
+          actorId: user.id,
           messageId: message.id,
           action: 'reaction_received',
         });

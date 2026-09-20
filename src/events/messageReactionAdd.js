@@ -43,6 +43,7 @@ export default {
           itemName: guildEmoji.name,
           animated: guildEmoji.animated,
           userId: message.author.id,
+          actorId: user.id,
           messageId: message.id,
           createdAt,
         });

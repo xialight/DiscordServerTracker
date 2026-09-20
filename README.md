@@ -45,7 +45,8 @@ Single `usage` table, one row per emoji/sticker event:
 | `action` | `message`, `reaction_sent`, or `reaction_received` (stickers are always `message`) |
 | `item_id` / `item_name` | the emoji/sticker's Discord ID and name at time of use |
 | `user_id` | who gets credited |
+| `actor_id` | for `reaction_received` rows, who reacted (so each reactor is counted and removed separately); empty otherwise |
 | `message_id` | used to clean up rows if a message or reaction is removed |
 | `created_at` | unix seconds, indexed for range queries |
 
-Each emoji/sticker counts at most once per message (and once per user per reaction), enforced by a unique index on `(kind, action, item_id, user_id, message_id)` — spamming the same emote 50 times in one message still counts as 1.
+Each emoji/sticker counts at most once per message (and once per user per reaction), enforced by a unique index on `(kind, action, item_id, user_id, message_id, actor_id)` — spamming the same emote 50 times in one message still counts as 1.

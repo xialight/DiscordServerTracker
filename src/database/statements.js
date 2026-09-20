@@ -1,8 +1,10 @@
 import { db } from './db.js';
 
 const insertUsageStmt = db.prepare(`
-  INSERT OR IGNORE INTO usage (kind, action, item_id, item_name, animated, user_id, message_id, created_at)
-  VALUES (@kind, @action, @itemId, @itemName, @animated, @userId, @messageId, @createdAt)
+  INSERT OR IGNORE INTO usage
+    (kind, action, item_id, item_name, animated, user_id, message_id, actor_id, created_at)
+  VALUES
+    (@kind, @action, @itemId, @itemName, @animated, @userId, @messageId, @actorId, @createdAt)
 `);
 
 export function recordUsage(record) {
@@ -14,17 +16,18 @@ export function recordUsage(record) {
     animated: record.animated ? 1 : 0,
     userId: record.userId,
     messageId: record.messageId,
+    actorId: record.actorId ?? '',
     createdAt: record.createdAt ?? Math.floor(Date.now() / 1000),
   });
 }
 
 const deleteReactionStmt = db.prepare(`
   DELETE FROM usage
-  WHERE message_id = ? AND item_id = ? AND user_id = ? AND action = ?
+  WHERE message_id = ? AND item_id = ? AND user_id = ? AND action = ? AND actor_id = ?
 `);
 
-export function removeReactionUsage({ itemId, userId, messageId, action }) {
-  deleteReactionStmt.run(messageId, itemId, userId, action);
+export function removeReactionUsage({ itemId, userId, messageId, action, actorId = '' }) {
+  deleteReactionStmt.run(messageId, itemId, userId, action, actorId);
 }
 
 const deleteMessageStmt = db.prepare(`DELETE FROM usage WHERE message_id = ?`);
