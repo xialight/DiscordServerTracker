@@ -36,7 +36,7 @@ export function removeMessageUsage(messageId) {
 const itemCountsStmt = db.prepare(`
   SELECT item_id AS itemId, COUNT(*) AS count
   FROM usage
-  WHERE kind = ? AND created_at >= ?
+  WHERE kind = ? AND created_at >= ? AND action IN ('message', 'reaction_sent')
   GROUP BY item_id
 `);
 
@@ -47,7 +47,7 @@ export function getItemCounts({ kind, since }) {
 const userCountsStmt = db.prepare(`
   SELECT user_id AS userId, COUNT(*) AS count
   FROM usage
-  WHERE kind = ? AND created_at >= ?
+  WHERE kind = ? AND created_at >= ? AND action IN ('message', 'reaction_sent')
   GROUP BY user_id
   ORDER BY count DESC
 `);
@@ -59,7 +59,7 @@ export function getUserCounts({ kind, since }) {
 const userBreakdownStmt = db.prepare(`
   SELECT item_id AS itemId, item_name AS itemName, animated, COUNT(*) AS count
   FROM usage
-  WHERE kind = ? AND user_id = ? AND created_at >= ?
+  WHERE kind = ? AND user_id = ? AND created_at >= ? AND action IN ('message', 'reaction_sent')
   GROUP BY item_id
   ORDER BY count DESC
   LIMIT ?
