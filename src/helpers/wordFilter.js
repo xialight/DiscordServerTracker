@@ -60,5 +60,9 @@ export function extractWords(content) {
   const trimmed = content?.trim();
   if (!trimmed) return [];
   if (isLikelyCommand(trimmed)) return [];
-  return tokenize(trimmed);
+
+  // A word counts once per message no matter how many times it's repeated,
+  // same principle as emoji/sticker usage: one spammed message shouldn't
+  // outweigh several different people each saying it once.
+  return [...new Set(tokenize(trimmed))];
 }
