@@ -72,6 +72,36 @@ export function getUserBreakdown({ kind, userId, since, limit = 12 }) {
   return userBreakdownStmt.all(kind, userId, since, limit);
 }
 
+const incrementWordStmt = db.prepare(`
+  INSERT INTO word_counts (word, day, count) VALUES (?, ?, 1)
+  ON CONFLICT(word, day) DO UPDATE SET count = count + 1
+`);
+
+const incrementWordsTxn = db.transaction((words, day) => {
+  for (const word of words) incrementWordStmt.run(word, day);
+});
+
+export function incrementWordCounts(words, day) {
+  if (!words.length) return;
+  incrementWordsTxn(words, day);
+}
+
+export function getWordCounts({ days, limit = 120 }) {
+  const placeholders = days.map(() => '?').join(',');
+  return db
+    .prepare(
+      `
+      SELECT word, SUM(count) AS count
+      FROM word_counts
+      WHERE day IN (${placeholders})
+      GROUP BY word
+      ORDER BY count DESC
+      LIMIT ?
+    `
+    )
+    .all(...days, limit);
+}
+
 export function getItemLeaderboard({ kind, itemId, direction, since, limit = 10 }) {
   const actions = direction === 'received' ? ['reaction_received'] : ['message', 'reaction_sent'];
   const placeholders = actions.map(() => '?').join(',');

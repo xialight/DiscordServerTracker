@@ -1,7 +1,8 @@
 import { Events } from 'discord.js';
 import { config } from '../config.js';
-import { recordUsage } from '../database/statements.js';
-import { extractCustomEmojiIds, isTrackedGuild } from '../helpers/utilities.js';
+import { incrementWordCounts, recordUsage } from '../database/statements.js';
+import { extractCustomEmojiIds, getUtcDayString, isTrackedGuild } from '../helpers/utilities.js';
+import { extractWords } from '../helpers/wordFilter.js';
 
 function processEmojis(message) {
   const matches = extractCustomEmojiIds(message.content);
@@ -49,15 +50,21 @@ function processStickers(message) {
   }
 }
 
+function processWords(message) {
+  const words = extractWords(message.content);
+  incrementWordCounts(words, getUtcDayString());
+}
+
 export default {
   name: Events.MessageCreate,
   async execute(message) {
     if (!isTrackedGuild(message.guildId, config.guildId)) return;
-    if (message.author?.bot) return;
+    if (message.author?.bot || message.webhookId) return;
 
     try {
       processEmojis(message);
       processStickers(message);
+      processWords(message);
     } catch (error) {
       console.error(`Error in ${Events.MessageCreate}:`, error);
     }

@@ -32,8 +32,9 @@ pm2 start src/index.js --name discord-server-tracker --interpreter node
 - `/leaderboard board:<Emojis|Stickers|Users (Emojis)|Users (Stickers)> [range] [order:Most used|Least used]` — paginated server-wide leaderboards (Prev/Next buttons). Emoji and sticker boards list every emoji/sticker the server currently has, including unused ones at 0, so `Least used` is the way to find candidates to delete.
 - `/stats [user] [range]` — a user's (or your own) personal top emojis and stickers.
 - `/emoji-leaderboard emoji:<emoji> [direction:Sent|Received] [range]` — who uses (or gets reactions with) a specific emoji the most.
+- `/wordcloud range:<Daily|Weekly>` — an image of the server's most common chat words.
 
-`range` is `Daily`, `Weekly`, or `All-Time` (default) on every command.
+`range` is `Daily`, `Weekly`, or `All-Time` (default) on the leaderboard/stats commands; `/wordcloud` only offers `Daily`/`Weekly` (see below for why).
 
 ## Data model
 
@@ -50,3 +51,16 @@ Single `usage` table, one row per emoji/sticker event:
 | `created_at` | unix seconds, indexed for range queries |
 
 Each emoji/sticker counts at most once per message (and once per user per reaction), enforced by a unique index on `(kind, action, item_id, user_id, message_id, actor_id)` — spamming the same emote 50 times in one message still counts as 1.
+
+## Word cloud
+
+`/wordcloud` is built to never retain raw message text or per-user data. As each message comes in, it's tokenized in memory and only a `(word, day, count)` counter is incremented in a separate `word_counts` table — there's no message ID or user ID attached to a word, so the data at rest can't be traced back to who said what. Counters older than 9 days are deleted automatically on every bot startup, which is also why `/wordcloud` only offers Daily/Weekly ranges — there's no "all-time" data to query.
+
+Before counting, a message is skipped entirely if:
+- it's from a bot or a webhook
+- its content is empty after trimming (covers embed-only, attachment-only, and sticker-only messages, since embeds are never read)
+- it starts with a common bot-command prefix character (`!`, `.`, `/`, `?`, `-`, `$`, `%`, `~`, `;`, `>`, `+`, `=`, `&`)
+
+Within a message that passes, these are stripped before splitting into words: code blocks, inline code, URLs (`http(s)://...`, `www...`), `@user`/`@role`/`#channel` mentions, custom emoji codes, and Markdown formatting characters. Remaining tokens under 3 characters, pure numbers, and standard English stopwords (the, a, is, and, ...) are dropped — chat slang like "lol"/"lmao"/"ngl" is intentionally kept, since that's exactly what makes it fun. Tokenizing is ASCII-only, so accented/non-English words will get split on the accented characters.
+
+The image itself is rendered server-side with `d3-cloud` (layout) and `@napi-rs/canvas` (drawing) — no external API calls. Word rotation is intentionally disabled: `d3-cloud`'s collision detection isn't precise for rotated text against this canvas backend and produces visible overlaps, so every word is drawn horizontally.

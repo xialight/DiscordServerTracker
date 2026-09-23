@@ -29,3 +29,18 @@ export function extractCustomEmojiIds(content) {
 export function isTrackedGuild(guildId, configGuildId) {
   return guildId === configGuildId;
 }
+
+export function getUtcDayString(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function getDayRange(range) {
+  const dayCount = range === 'weekly' ? 7 : 1;
+  const days = [];
+  for (let i = 0; i < dayCount; i++) {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - i);
+    days.push(getUtcDayString(date));
+  }
+  return days;
+}

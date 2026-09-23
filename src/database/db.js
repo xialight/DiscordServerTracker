@@ -28,7 +28,22 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_usage_item ON usage(kind, item_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_usage_user ON usage(user_id, kind, created_at);
   CREATE INDEX IF NOT EXISTS idx_usage_message ON usage(message_id);
+
+  -- Aggregate-only word counts for /wordcloud: no message_id or user_id, just
+  -- how many times a word was seen on a given UTC day. Old days are pruned below.
+  CREATE TABLE IF NOT EXISTS word_counts (
+    word TEXT NOT NULL,
+    day TEXT NOT NULL,
+    count INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (word, day)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_word_counts_day ON word_counts(day);
 `);
+
+const WORD_COUNT_RETENTION_DAYS = 9;
+const cutoffDay = new Date(Date.now() - WORD_COUNT_RETENTION_DAYS * 86400 * 1000).toISOString().slice(0, 10);
+db.prepare('DELETE FROM word_counts WHERE day < ?').run(cutoffDay);
 
 const hasColumn = (name) =>
   db
