@@ -14,9 +14,18 @@ const SPIRAL_ANGLE_STEP = 0.35;
 const SPIRAL_RADIUS_STEP = 2.2;
 const MAX_SPIRAL_RADIUS = Math.hypot(WIDTH, HEIGHT);
 
+// Square-root (not linear) scaling: a couple of extreme outlier words (e.g. a
+// copypasta or meme spammed 400 times) would otherwise stretch the range so
+// far that every normal word gets crushed down near MIN_FONT_SIZE. sqrt
+// compresses the outlier's effect on the scale much more than it compresses
+// the normal range, so ordinary words stay visually distinguishable from
+// each other.
 function scaleFontSize(count, minCount, maxCount) {
   if (maxCount === minCount) return (MIN_FONT_SIZE + MAX_FONT_SIZE) / 2;
-  const t = (count - minCount) / (maxCount - minCount);
+  const scaledCount = Math.sqrt(count);
+  const scaledMin = Math.sqrt(minCount);
+  const scaledMax = Math.sqrt(maxCount);
+  const t = (scaledCount - scaledMin) / (scaledMax - scaledMin);
   return MIN_FONT_SIZE + t * (MAX_FONT_SIZE - MIN_FONT_SIZE);
 }
 
