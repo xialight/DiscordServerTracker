@@ -53,10 +53,17 @@ function withinBounds(box) {
 // exceeds the canvas — the word is then dropped, same as a normal word cloud
 // does when it runs out of room.
 function findPosition(box, placed) {
-  for (let angle = 0; ; angle += SPIRAL_ANGLE_STEP) {
-    const radius = SPIRAL_RADIUS_STEP * angle;
+  // Every word searching the same spiral starting at angle 0 makes them settle
+  // along the same handful of radial "arms", producing a pinwheel/flower look
+  // instead of an organic fill. Randomizing the start angle spreads words out
+  // in different directions so the fill looks natural.
+  const startAngle = Math.random() * Math.PI * 2;
+
+  for (let step = 0; ; step += SPIRAL_ANGLE_STEP) {
+    const radius = SPIRAL_RADIUS_STEP * step;
     if (radius > MAX_SPIRAL_RADIUS) return null;
 
+    const angle = startAngle + step;
     const candidate = { ...box, x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
     if (!withinBounds(candidate)) continue;
     if (placed.some((other) => overlaps(candidate, other))) continue;
