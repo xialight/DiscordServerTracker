@@ -34,12 +34,20 @@ pm2 start src/index.js --name discord-server-tracker --interpreter node
 - `/stats [user] [range]` — a user's (or your own) personal top emojis and stickers.
 - `/emoji-leaderboard emoji:<emoji> [direction:Sent|Received] [range]` — who uses (or gets reactions with) a specific emoji the most.
 - `/wordcloud range:<Daily|Weekly>` — an image of the server's most common chat words.
-- `/search query:<text>` — web search results via the [Brave Search API](https://api.search.brave.com), top 5 results.
+- `/search query:<text>` — an AI-generated overview answer via Brave's **Answers** product (separate from and in addition to the Search plan — needs its own activation on your Brave account). Replaced the earlier top-5-results version, which took up too much of the channel.
 - `/define word:<word>` — dictionary definition via the free [dictionaryapi.dev](https://dictionaryapi.dev), no key required.
 
 `range` is `Daily`, `Weekly`, or `All-Time` (default) on the leaderboard/stats commands; `/wordcloud` only offers `Daily`/`Weekly` (see below for why).
 
 `/search` and `/define` don't touch the database at all — no queries are logged or stored, they're just a live proxy to their respective APIs.
+
+Both requests go through [httpRetry.js](src/helpers/httpRetry.js): a 15s timeout per attempt, one retry on a timeout or 5xx response, no retry on 4xx (a real "not found" won't change on retry, so it fails fast). This exists because dictionaryapi.dev's free tier is genuinely slow/flaky sometimes — observed both a request that took 15+ seconds and a Cloudflare `522` origin timeout on lookups during testing.
+
+### `/search` implementation note
+
+`/search` uses Brave's two-step Summarizer flow (documented under that name in Brave's API, marketed as "Answers" on their pricing page — very likely the same underlying product, given the pricing card's own description matches): a web search request with `summary=1` returns an opaque `summarizer.key`, which is then exchanged at `/res/v1/summarizer/search` for the actual generated answer.
+
+Brave's docs for the exact shape of that second response are behind a login-gated dashboard I couldn't access, and the only public code example found scrapes an unrelated, unofficial endpoint on Brave's public website rather than the real paid API — so I couldn't fully verify the summary-text field name against real docs. [braveSearch.js](src/helpers/braveSearch.js)'s `extractSummaryText` tries the shapes described in Brave's public doc excerpts, and if none match, logs the full raw response instead of silently showing nothing. **The first live `/search` test is worth checking the console/pm2 logs for** — if it replies with "No AI overview available," check the logs for a `Brave summarizer: could not extract summary text from response:` line and send it over so the extraction can be corrected against real data instead of guesses.
 
 ## Data model
 
