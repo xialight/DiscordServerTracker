@@ -16,6 +16,7 @@ A Discord bot that tracks custom emoji and sticker usage **exclusively** for one
    - `CLIENT_ID` — your application's client ID
    - `GUILD_ID` — the ID of the one server to track
    - `DB_PATH` — optional, defaults to `./data/tracker.db`
+   - `BRAVE_API_KEY` — for `/search`; get one free at [api.search.brave.com](https://api.search.brave.com) (their free "Data for AI" tier)
 3. In the Developer Portal, enable the **Message Content Intent** and **Server Members Intent** for the bot.
 4. Invite the bot to your server with the `bot` and `applications.commands` scopes and at minimum `View Channel`, `Send Messages`, and `Read Message History` permissions.
 5. Register slash commands (guild-scoped, so they show up instantly): `npm run deploy`
@@ -33,8 +34,12 @@ pm2 start src/index.js --name discord-server-tracker --interpreter node
 - `/stats [user] [range]` — a user's (or your own) personal top emojis and stickers.
 - `/emoji-leaderboard emoji:<emoji> [direction:Sent|Received] [range]` — who uses (or gets reactions with) a specific emoji the most.
 - `/wordcloud range:<Daily|Weekly>` — an image of the server's most common chat words.
+- `/search query:<text>` — web search results via the [Brave Search API](https://api.search.brave.com), top 5 results.
+- `/define word:<word>` — dictionary definition via the free [dictionaryapi.dev](https://dictionaryapi.dev), no key required.
 
 `range` is `Daily`, `Weekly`, or `All-Time` (default) on the leaderboard/stats commands; `/wordcloud` only offers `Daily`/`Weekly` (see below for why).
+
+`/search` and `/define` don't touch the database at all — no queries are logged or stored, they're just a live proxy to their respective APIs.
 
 ## Data model
 
