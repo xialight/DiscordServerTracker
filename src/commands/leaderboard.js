@@ -101,7 +101,7 @@ export default {
     const { since, label } = rangeToSince(range);
 
     const scope = board.startsWith('top-users') ? 'users' : 'items';
-    const kind = board.endsWith('sticker') ? 'sticker' : 'emoji';
+    const kind = board.includes('sticker') ? 'sticker' : 'emoji';
     const kindLabel = kind === 'emoji' ? 'Emojis' : 'Stickers';
 
     const entries =
