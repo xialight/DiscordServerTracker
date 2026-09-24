@@ -1,10 +1,9 @@
+import { fetchWithRetry } from './httpRetry.js';
+
 const DICTIONARY_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en';
-const REQUEST_TIMEOUT_MS = 10_000;
 
 export async function lookupDefinition(word) {
-  const response = await fetch(`${DICTIONARY_URL}/${encodeURIComponent(word)}`, {
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
+  const response = await fetchWithRetry(`${DICTIONARY_URL}/${encodeURIComponent(word)}`);
 
   if (response.status === 404) return null;
   if (!response.ok) {
