@@ -47,6 +47,8 @@ Both requests go through [httpRetry.js](src/helpers/httpRetry.js): a 15s timeout
 
 `/search` calls the Gemini API's `POST /v1beta/interactions` endpoint with the `google_search` tool enabled, so answers are grounded in real, current Google Search results rather than the model's training data alone. The answer text is read from the response's `output_text` convenience field, with a fallback that walks the `steps` array for a `model_output` step's content if that field is ever missing.
 
+Model choice matters a lot for the free tier here: `gemini-3.8-flash` (Google's own grounding-docs example model) is capped at **5 requests/minute, 20/day** on a free-tier key — the `google_search` tool apparently draws from that same tight base quota rather than the separate, much larger (5,000/month) grounding-specific quota, so it's easy to hit a `429` almost immediately. `gemini-3.1-flash-lite` gets **15 RPM / 500 RPD** on the same account and is cheaper per-token, so that's what's used in [gemini.js](src/helpers/gemini.js) instead.
+
 This replaced two earlier, more expensive attempts: a Brave Search top-5-results list (took up too much of the channel) and then Brave's **Answers** product (a separate paid product from Brave's plain Search plan, priced per-query plus opaque token costs that added up to several dollars a day). Gemini's Google Search grounding gives a generous free monthly quota before any per-request charge, and Flash-family models have their own free tier for the token costs on top of that — likely at or near $0/month for a single server's usage, and meaningfully cheaper than Brave even beyond any free tier.
 
 ## Data model

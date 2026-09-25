@@ -2,8 +2,10 @@ import { config } from '../config.js';
 import { fetchWithRetry } from './httpRetry.js';
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-// Confirmed working with the google_search tool in Gemini's own grounding docs example.
-const MODEL = 'gemini-3.8-flash';
+// gemini-3.8-flash's free tier is capped at 5 RPM / 20 RPD, which the google_search
+// tool apparently draws from too (not the separate, much larger grounding quota) -
+// gemini-3.1-flash-lite gets 15 RPM / 500 RPD on the same account, and is cheaper.
+const MODEL = 'gemini-3.1-flash-lite';
 
 function extractText(data) {
   if (typeof data.output_text === 'string' && data.output_text.trim()) {
