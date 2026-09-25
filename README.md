@@ -16,7 +16,7 @@ A Discord bot that tracks custom emoji and sticker usage **exclusively** for one
    - `CLIENT_ID` — your application's client ID
    - `GUILD_ID` — the ID of the one server to track
    - `DB_PATH` — optional, defaults to `./data/tracker.db`
-   - `BRAVE_API_KEY` — for `/search`; get one free at [api.search.brave.com](https://api.search.brave.com) (their free "Data for AI" tier)
+   - `GEMINI_API_KEY` — for `/search`; get one free at [aistudio.google.com](https://aistudio.google.com/apikey)
 3. In the Developer Portal, enable the **Message Content Intent** and **Server Members Intent** for the bot.
 4. Invite the bot to your server with the `bot` and `applications.commands` scopes and at minimum `View Channel`, `Send Messages`, and `Read Message History` permissions.
 5. Register slash commands (guild-scoped, so they show up instantly): `npm run deploy`
@@ -34,7 +34,7 @@ pm2 start src/index.js --name discord-server-tracker --interpreter node
 - `/stats [user] [range]` — a user's (or your own) personal top emojis and stickers.
 - `/emoji-leaderboard emoji:<emoji> [direction:Sent|Received] [range]` — who uses (or gets reactions with) a specific emoji the most.
 - `/wordcloud range:<Daily|Weekly>` — an image of the server's most common chat words.
-- `/search query:<text>` — an AI-generated overview answer via Brave's **Answers** product (separate from and in addition to the Search plan — needs its own activation on your Brave account). Replaced the earlier top-5-results version, which took up too much of the channel.
+- `/search query:<text>` — an AI-generated overview answer, grounded in real Google Search results via the Gemini API.
 - `/define word:<word>` — dictionary definition via the free [dictionaryapi.dev](https://dictionaryapi.dev), no key required.
 
 `range` is `Daily`, `Weekly`, or `All-Time` (default) on the leaderboard/stats commands; `/wordcloud` only offers `Daily`/`Weekly` (see below for why).
@@ -45,9 +45,9 @@ Both requests go through [httpRetry.js](src/helpers/httpRetry.js): a 15s timeout
 
 ### `/search` implementation note
 
-`/search` calls Brave's **Answers** product directly: `POST /res/v1/chat/completions`, with an OpenAI-style chat body (`{ messages: [{ role: 'user', content: query }] }`) and the response read from `choices[0].message.content`. This is a separate product from the Search/web-search plan and needs its own activation on your Brave account.
+`/search` calls the Gemini API's `POST /v1beta/interactions` endpoint with the `google_search` tool enabled, so answers are grounded in real, current Google Search results rather than the model's training data alone. The answer text is read from the response's `output_text` convenience field, with a fallback that walks the `steps` array for a `model_output` step's content if that field is ever missing.
 
-An earlier version of this guessed Answers was the same as Brave's older two-step "Summarizer" flow (`summary=1` on a web search → exchange a key at `/res/v1/summarizer/search`) — that guess was wrong; Answers is its own chat-completions-style endpoint, confirmed against Brave's actual dashboard documentation (their public docs for it are login-gated, so this wasn't discoverable without a live account).
+This replaced two earlier, more expensive attempts: a Brave Search top-5-results list (took up too much of the channel) and then Brave's **Answers** product (a separate paid product from Brave's plain Search plan, priced per-query plus opaque token costs that added up to several dollars a day). Gemini's Google Search grounding gives a generous free monthly quota before any per-request charge, and Flash-family models have their own free tier for the token costs on top of that — likely at or near $0/month for a single server's usage, and meaningfully cheaper than Brave even beyond any free tier.
 
 ## Data model
 
