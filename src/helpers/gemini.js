@@ -2,10 +2,12 @@ import { config } from '../config.js';
 import { fetchWithRetry } from './httpRetry.js';
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-// gemini-3.8-flash's free tier is capped at 5 RPM / 20 RPD, which the google_search
-// tool apparently draws from too (not the separate, much larger grounding quota) -
-// gemini-3.1-flash-lite gets 15 RPM / 500 RPD on the same account, and is cheaper.
-const MODEL = 'gemini-3.1-flash-lite';
+// gemini-3.1-flash-lite (switched to for free-tier rate limits) started returning
+// 400 Bad Request once billing was enabled and the request reached real validation -
+// Gemini's own google_search docs only ever show gemini-3.8-flash as a working
+// example, so flash-lite tool support was never actually confirmed. Reverting to
+// the model confirmed to work with this tool.
+const MODEL = 'gemini-3.8-flash';
 
 function extractText(data) {
   if (typeof data.output_text === 'string' && data.output_text.trim()) {
@@ -39,7 +41,8 @@ export async function geminiSearchAnswer(query) {
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini request failed: ${response.status} ${response.statusText}`);
+    const body = await response.text().catch(() => '<failed to read body>');
+    throw new Error(`Gemini request failed: ${response.status} ${response.statusText} - ${body}`);
   }
 
   const data = await response.json();
