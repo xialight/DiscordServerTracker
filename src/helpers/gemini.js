@@ -26,19 +26,40 @@ function extractText(data) {
   return text || null;
 }
 
+// Grounded search (live Google queries + page retrieval + synthesis) is slower than
+// the lightweight calls httpRetry's 15s default was tuned for.
+const TIMEOUT_MS = 45_000;
+
 export async function geminiSearchAnswer(query) {
-  const response = await fetchWithRetry(INTERACTIONS_URL, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': config.geminiApiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      input: query,
-      tools: [{ type: 'google_search' }],
-    }),
-  });
+  const startedAt = Date.now();
+
+  let response;
+  try {
+    // stream explicitly set false (not just omitted) to rule out any chance of the
+    // Interactions API defaulting to a streaming response we're not consuming as one.
+    response = await fetchWithRetry(
+      INTERACTIONS_URL,
+      {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': config.geminiApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          input: query,
+          tools: [{ type: 'google_search' }],
+          stream: false,
+        }),
+      },
+      { timeoutMs: TIMEOUT_MS }
+    );
+  } catch (error) {
+    console.error(`Gemini request aborted/failed after ${Date.now() - startedAt}ms`);
+    throw error;
+  }
+
+  console.log(`Gemini request completed in ${Date.now() - startedAt}ms (status ${response.status})`);
 
   if (!response.ok) {
     const body = await response.text().catch(() => '<failed to read body>');
