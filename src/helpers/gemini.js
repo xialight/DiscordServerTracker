@@ -9,6 +9,14 @@ const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/inter
 // the model confirmed to work with this tool.
 const MODEL = 'gemini-3.8-flash';
 
+// Grounded answers can otherwise come back as full long-form articles (e.g. a
+// multi-section recipe guide) that blow well past Discord's 4096-char embed
+// description limit. Ask for brevity, and hard-cap output length as a backstop
+// in case the model doesn't fully comply.
+const SYSTEM_INSTRUCTION =
+  'You are answering a question that will be shown in a Discord chat message. Keep your answer concise: a few short paragraphs at most. Summarize rather than giving exhaustive step-by-step detail, even for how-to questions.';
+const MAX_OUTPUT_TOKENS = 500;
+
 function extractText(data) {
   if (typeof data.output_text === 'string' && data.output_text.trim()) {
     return data.output_text.trim();
@@ -48,7 +56,9 @@ export async function geminiSearchAnswer(query) {
         body: JSON.stringify({
           model: MODEL,
           input: query,
+          system_instruction: SYSTEM_INSTRUCTION,
           tools: [{ type: 'google_search' }],
+          generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
           stream: false,
         }),
       },
